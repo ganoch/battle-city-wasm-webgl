@@ -8,9 +8,7 @@
 // tank must implement. Movement is expressed in grid/board units (one step per
 // call) and shooting fires a single projectile.
 //
-// Rendering is shared: render() (implemented in tank.cpp) draws the sprite
-// returned by sprite() at the tank's grid position, so a tank's appearance
-// automatically follows its current direction.
+// Rendering code consumes the state and sprite data exposed by this interface.
 class Tank
 {
 public:
@@ -32,16 +30,4 @@ public:
     // Source rectangle in sprites.png for the current direction/frame.
     virtual SpriteRect sprite() const = 0;
 
-    // --- rendering ---------------------------------------------------------
-    // One-time setup: builds the sprite shader/quad and starts loading the
-    // sprite sheet from `url` (resolved relative to index.html, e.g.
-    // "sprites.png"). Requires a current WebGL2 context.
-    static void initRenderer(const char* url = "sprites.png");
-
-    // True once the sprite sheet image has finished loading.
-    static bool spritesReady();
-
-    // Draw this tank's sprite at its grid position, facing its current
-    // direction.
-    void render() const;
 };

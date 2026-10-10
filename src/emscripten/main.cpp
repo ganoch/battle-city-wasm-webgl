@@ -3,9 +3,9 @@
 #include <emscripten.h>
 #include <emscripten/html5_webgl.h>
 
-#include "Tanks.h"
+#include "../Tanks.h"
+#include "TankRenderer.h"
 
-// The two player tanks and three enemy tanks for the demo match.
 static TankRoster g_roster;
 static int g_tick = 0;
 
@@ -14,9 +14,8 @@ static void frame()
     glClearColor(0.07f, 0.08f, 0.10f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    if (Tank::spritesReady())
+    if (EmscriptenTankRenderer::spritesReady())
     {
-        // Advance the two-frame walk cycle for every tank.
         const int frame = (g_tick / 15) % kFramesPerDir;
         g_roster.player1.setFrame(frame);
         g_roster.player2.setFrame(frame);
@@ -24,14 +23,13 @@ static void frame()
         g_roster.enemy2.setFrame(frame);
         g_roster.enemy3.setFrame(frame);
 
-        // Show a sprite following a changing direction.
         static const Direction kSpin[4] = {
             Direction::Up, Direction::Right, Direction::Down, Direction::Left
         };
         g_roster.enemy3.face(kSpin[(g_tick / 60) % 4]);
 
         for (Tank* tank : tanksOf(g_roster))
-            tank->render();
+            EmscriptenTankRenderer::render(*tank);
     }
 
     ++g_tick;
@@ -46,12 +44,8 @@ int main()
         emscripten_webgl_create_context("#canvas", &attr);
 
     emscripten_webgl_make_context_current(ctx);
+    EmscriptenTankRenderer::init("sprites.png");
 
-    // Loads the sprite sheet from a URL relative to index.html.
-    Tank::initRenderer("sprites.png");
-
-    // Lay out a scene; each tank faces a different direction so the
-    // direction-based sprite selection is visible.
     g_roster.player1.place(1, 1);  g_roster.player1.face(Direction::Up);
     g_roster.player2.place(3, 1);  g_roster.player2.face(Direction::Right);
     g_roster.enemy1.place(6, 4);   g_roster.enemy1.face(Direction::Down);

@@ -1,4 +1,4 @@
-#include "Tank.h"
+#include "TankRenderer.h"
 
 #include <GLES3/gl3.h>
 
@@ -7,40 +7,34 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
-// ---------------------------------------------------------------------------
-// Pixel size of one grid cell on screen. Tank coordinates (x, y) are grid
-// units with y growing upward; the vertex shader converts them to canvas
-// pixels (whose y grows downward).
-// ---------------------------------------------------------------------------
 namespace
 {
 constexpr float kTilePx = 32.0f;
 
-// --- GL resources ---------------------------------------------------------
-GLuint g_program  = 0;
-GLuint g_vao      = 0;
-GLuint g_vbo      = 0;
-GLuint g_texture  = 0;
+GLuint g_program = 0;
+GLuint g_vao = 0;
+GLuint g_vbo = 0;
+GLuint g_texture = 0;
 
 GLint g_uDestRect = -1;
 GLint g_uViewport = -1;
-GLint g_uSrcRect  = -1;
-GLint g_uTexSize  = -1;
-GLint g_uTexture  = -1;
+GLint g_uSrcRect = -1;
+GLint g_uTexSize = -1;
+GLint g_uTexture = -1;
 
-int   g_viewW  = 800;
-int   g_viewH  = 600;
+int g_viewW = 800;
+int g_viewH = 600;
 float g_sheetW = 1.0f;
 float g_sheetH = 1.0f;
-bool  g_ready  = false;
+bool g_ready = false;
 
 const char* kVertexSrc = R"GLSL(#version 300 es
-layout(location = 0) in vec2 aPos;   // unit quad, 0..1
-layout(location = 1) in vec2 aUV;    // matching texture coords, 0..1
-uniform vec4 uDestRect;              // x, y, w, h in canvas pixels (y down)
-uniform vec2 uViewport;              // canvas size in pixels
-uniform vec4 uSrcRect;               // sprite rect in the sheet, pixels
-uniform vec2 uTexSize;               // sheet size in pixels
+layout(location = 0) in vec2 aPos;
+layout(location = 1) in vec2 aUV;
+uniform vec4 uDestRect;
+uniform vec2 uViewport;
+uniform vec4 uSrcRect;
+uniform vec2 uTexSize;
 out vec2 vUV;
 void main()
 {
@@ -81,21 +75,10 @@ GLuint compileShader(GLenum type, const char* src)
 }
 } // namespace
 
-// ---------------------------------------------------------------------------
-// Sprite-sheet loading (JavaScript side).
-//
-// The sheet is fetched from a URL relative to index.html and uploaded straight
-// into the existing WebGL2 context, so nothing needs to be preloaded with
-// --preload-file. C++ polls the Module flags below via jsSpriteSheetReady().
-// ---------------------------------------------------------------------------
 EM_JS(void, jsLoadSpriteSheet, (const char* url), {
     var src = UTF8ToString(url);
     var img = new Image();
     img.onload = function () {
-        // Decode into raw RGBA pixels (top row first) and hand them to C++,
-        // which uploads them into its own GL texture. WebGL's JS API works
-        // with texture *objects*, so it cannot bind the integer name that
-        // glGenTextures() returns.
         var canvas = document.createElement('canvas');
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
@@ -103,14 +86,7 @@ EM_JS(void, jsLoadSpriteSheet, (const char* url), {
         ctx.drawImage(img, 0, 0);
         var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
-        // --- background removal (colour key) -------------------------------
-        // The artwork's background is near black: mostly rgb(0, 0, 1) with
-        // some pure black rgb(0, 0, 0). Force both to fully transparent so
-        // blending drops the background instead of drawing a black box
-        // around each tank. sprites.png already ships stripped, so this is a
-        // fallback that keeps things correct if an opaque copy is served
-        // (e.g. a stale cache); the sprites contain no other near-black
-        // pixels, so no artwork is lost.
+        // Remove the near-black background used by the sprite artwork.
         for (var i = 0; i < data.length; i += 4) {
             if (data[i] === 0 && data[i + 1] === 0 &&
                 (data[i + 2] === 0 || data[i + 2] === 1)) {
@@ -147,7 +123,7 @@ EM_JS(int, jsSpriteSheetHeight, (), {
     return (typeof Module !== 'undefined' && Module['__spriteSheetH']) | 0;
 });
 
-void Tank::initRenderer(const char* url)
+void EmscriptenTankRenderer::init(const char* url)
 {
     emscripten_get_canvas_element_size("#canvas", &g_viewW, &g_viewH);
 
@@ -163,11 +139,10 @@ void Tank::initRenderer(const char* url)
 
     g_uDestRect = glGetUniformLocation(g_program, "uDestRect");
     g_uViewport = glGetUniformLocation(g_program, "uViewport");
-    g_uSrcRect  = glGetUniformLocation(g_program, "uSrcRect");
-    g_uTexSize  = glGetUniformLocation(g_program, "uTexSize");
-    g_uTexture  = glGetUniformLocation(g_program, "uTexture");
+    g_uSrcRect = glGetUniformLocation(g_program, "uSrcRect");
+    g_uTexSize = glGetUniformLocation(g_program, "uTexSize");
+    g_uTexture = glGetUniformLocation(g_program, "uTexture");
 
-    // Unit quad: (pos.xy, uv.xy), drawn as a triangle strip.
     static const float kQuad[] = {
         0.0f, 0.0f, 0.0f, 0.0f,
         1.0f, 0.0f, 1.0f, 0.0f,
@@ -187,14 +162,13 @@ void Tank::initRenderer(const char* url)
     glBindVertexArray(0);
 
     glGenTextures(1, &g_texture);
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     jsLoadSpriteSheet(url);
 }
 
-bool Tank::spritesReady()
+bool EmscriptenTankRenderer::spritesReady()
 {
     if (!g_ready && jsSpriteSheetReady())
     {
@@ -220,17 +194,15 @@ bool Tank::spritesReady()
     return g_ready;
 }
 
-void Tank::render() const
+void EmscriptenTankRenderer::render(const Tank& tank)
 {
     if (!g_ready)
         return;
 
-    // The source rect comes from the tank's current direction/frame, then the
-    // grid position is mapped to a pixel quad on the canvas (y grows upward).
-    const SpriteRect src = sprite();
-    const float left = static_cast<float>(x()) * kTilePx;
-    const float top  = static_cast<float>(g_viewH) -
-                       (static_cast<float>(y()) + 1.0f) * kTilePx;
+    const SpriteRect src = tank.sprite();
+    const float left = static_cast<float>(tank.x()) * kTilePx;
+    const float top = static_cast<float>(g_viewH) -
+                      (static_cast<float>(tank.y()) + 1.0f) * kTilePx;
 
     glUseProgram(g_program);
     glUniform4f(g_uDestRect, left, top, kTilePx, kTilePx);

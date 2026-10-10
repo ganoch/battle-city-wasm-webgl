@@ -3,7 +3,7 @@
 install `emscripten`
 
 ```sh
-em++ src/main.cpp src/tank.cpp \
+em++ src/emscripten/main.cpp src/emscripten/TankRenderer.cpp \
     -O2 \
     -sWASM=1 \
     -sMIN_WEBGL_VERSION=2 \
