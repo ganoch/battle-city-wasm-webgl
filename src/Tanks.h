@@ -14,12 +14,13 @@ struct TankRoster
     EnemyTank  enemy1{1};
     EnemyTank  enemy2{2};
     EnemyTank  enemy3{3};
+    EnemyTank  enemy4{4};
 };
 
 // All tanks as Tank* so they can be updated/drawn polymorphically
 // (non-owning views into the roster).
-inline std::array<Tank*, 5> tanksOf(TankRoster& roster)
+inline std::array<Tank*, 6> tanksOf(TankRoster& roster)
 {
     return { &roster.player1, &roster.player2,
-             &roster.enemy1,  &roster.enemy2, &roster.enemy3 };
+             &roster.enemy1,  &roster.enemy2, &roster.enemy3, &roster.enemy4 };
 }

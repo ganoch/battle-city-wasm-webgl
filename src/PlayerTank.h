@@ -27,7 +27,7 @@ public:
     int ammo() const { return m_ammo; }
 
     // --- sprites -----------------------------------------------------------
-    SpritePoint spriteOrigin() const { return playerSpriteOrigin(m_id); }
+    SpritePoint spriteOrigin() const { return playerSpriteOrigin(m_id, m_level); }
     SpriteRect sprite() const override { return spriteRect(spriteOrigin(), m_dir, m_frame); }
     int frame() const { return m_frame; }
     void setFrame(int f) { m_frame = f % kFramesPerDir; }
@@ -35,6 +35,7 @@ public:
     // Scene helpers used by the demo to lay tanks out.
     void place(int x, int y) { m_x = x; m_y = y; }
     void face(Direction dir) { m_dir = dir; }
+    void levelUp() { if(m_level < 3) { m_level += 1; } }
 
 private:
     int m_id;
@@ -42,5 +43,6 @@ private:
     int m_y = 0;
     int m_ammo = 5;
     int m_frame = 0;
+    int m_level = 0;
     Direction m_dir = Direction::Up;
 };

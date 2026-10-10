@@ -22,6 +22,7 @@ static void frame()
         g_roster.enemy1.setFrame(frame);
         g_roster.enemy2.setFrame(frame);
         g_roster.enemy3.setFrame(frame);
+        g_roster.enemy4.setFrame(frame);
 
         static const Direction kSpin[4] = {
             Direction::Up, Direction::Right, Direction::Down, Direction::Left
@@ -51,6 +52,9 @@ int main()
     g_roster.enemy1.place(6, 4);   g_roster.enemy1.face(Direction::Down);
     g_roster.enemy2.place(8, 2);   g_roster.enemy2.face(Direction::Left);
     g_roster.enemy3.place(11, 3);  g_roster.enemy3.face(Direction::Up);
+    g_roster.enemy4.place(4, 2);  g_roster.enemy4.face(Direction::Down);
+
+    g_roster.player2.levelUp();
 
     emscripten_set_main_loop(frame, 0, 0);
     return 0;

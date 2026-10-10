@@ -50,9 +50,10 @@ struct SpriteRect
 
 constexpr SpritePoint kPlayer1Origin{   0,   0 };
 constexpr SpritePoint kPlayer2Origin{   0, 128 };
-constexpr SpritePoint kEnemy1Origin { 128,   0 };
-constexpr SpritePoint kEnemy2Origin { 128,  16 };
-constexpr SpritePoint kEnemy3Origin { 128,  32 };
+constexpr SpritePoint kEnemy1Origin { 128,  64 };
+constexpr SpritePoint kEnemy2Origin { 128,  80 };
+constexpr SpritePoint kEnemy3Origin { 128,  96 };
+constexpr SpritePoint kEnemy4Origin { 128, 112 };
 
 // Slot of a direction inside the strip's Up/Left/Down/Right cycle.
 constexpr int dirCycleIndex(Direction dir)
@@ -75,9 +76,11 @@ constexpr SpriteRect spriteRect(SpritePoint origin, Direction dir, int frame = 0
 }
 
 // Strip origin for each tank, keyed by the id used in the roster.
-constexpr SpritePoint playerSpriteOrigin(int id)
+constexpr SpritePoint playerSpriteOrigin(int id,int level = 0)
 {
-    return id == 2 ? kPlayer2Origin : kPlayer1Origin;
+    int x = id == 2 ? kPlayer2Origin.x : kPlayer1Origin.x;
+    int y = id == 2 ? kPlayer2Origin.y : kPlayer1Origin.y ;
+    return { x, y + (level * 16) };
 }
 
 constexpr SpritePoint enemySpriteOrigin(int id)
@@ -86,6 +89,7 @@ constexpr SpritePoint enemySpriteOrigin(int id)
     {
         case 2:  return kEnemy2Origin;
         case 3:  return kEnemy3Origin;
+        case 4:  return kEnemy4Origin;
         default: return kEnemy1Origin;
     }
 }
