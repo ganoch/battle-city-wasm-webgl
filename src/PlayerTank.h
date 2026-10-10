@@ -36,6 +36,7 @@ public:
     void place(int x, int y) { m_x = x; m_y = y; }
     void face(Direction dir) { m_dir = dir; }
     void levelUp() { if(m_level < 3) { m_level += 1; } }
+    void levelDown() { if(m_level > 0) { m_level -= 1; } }
 
 private:
     int m_id;

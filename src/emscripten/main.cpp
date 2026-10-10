@@ -1,6 +1,7 @@
 #include <GLES3/gl3.h>
 
 #include <emscripten.h>
+#include <emscripten/html5.h>
 #include <emscripten/html5_webgl.h>
 
 #include "../Tanks.h"
@@ -8,6 +9,30 @@
 
 static TankRoster g_roster;
 static int g_tick = 0;
+
+static EM_BOOL onKeyDown(int eventType, const EmscriptenKeyboardEvent* event, void* userData)
+{
+    if (!event || !event->key)
+        return EM_FALSE;
+
+    const char* key = event->key;
+    
+    if (strcmp(key, "p") == 0 || strcmp(key, "P") == 0)
+        g_roster.player2.levelUp();
+    else if (strcmp(key, "o") == 0 || strcmp(key, "O") == 0)
+        g_roster.player2.levelDown();
+    else if (strcmp(key, "ArrowUp") == 0)
+        g_roster.player1.face(Direction::Up);
+    else if (strcmp(key, "ArrowDown") == 0)
+        g_roster.player1.face(Direction::Down);
+    else if (strcmp(key, "ArrowLeft") == 0)
+        g_roster.player1.face(Direction::Left);
+    else if (strcmp(key, "ArrowRight") == 0)
+        g_roster.player1.face(Direction::Right);
+
+
+    return EM_FALSE;
+}
 
 static void frame()
 {
@@ -56,6 +81,7 @@ int main()
 
     g_roster.player2.levelUp();
 
+    emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, 1, onKeyDown);
     emscripten_set_main_loop(frame, 0, 0);
     return 0;
 }
