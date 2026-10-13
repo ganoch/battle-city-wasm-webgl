@@ -200,9 +200,9 @@ void EmscriptenTankRenderer::render(const Tank& tank)
         return;
 
     const SpriteRect src = tank.sprite();
-    const float left = static_cast<float>(tank.x()) * kTilePx;
+    const float left = static_cast<float>(tank.x()) * kTilePx /4;
     const float top = static_cast<float>(g_viewH) -
-                      (static_cast<float>(tank.y()) + 1.0f) * kTilePx;
+                      (static_cast<float>(tank.y()) + 1.0f) * kTilePx /4 ;
 
     glUseProgram(g_program);
     glUniform4f(g_uDestRect, left, top, kTilePx, kTilePx);
